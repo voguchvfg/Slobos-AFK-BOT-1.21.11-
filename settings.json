@@ -30,9 +30,9 @@
       "repeat": true,
       "repeat-delay": 500,
       "messages": [
-        "",
-        "",
-        ""
+        "Hi!",
+        "67",
+        "skibidi"
       ]
     },
     "chat-log": true,
