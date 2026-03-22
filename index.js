@@ -472,12 +472,20 @@ function createBot() {
         sendDiscordWebhook(`[!] **Kicked**: ${reason}`, 0xff0000); // Bright Red
       }
 
-      // Check for Aternos Idle Kick
-      if (typeof reason === 'string' && reason.includes('idle')) {
-        botState.botNameIndex++;
-        console.log(`[Anti-Kick] Idle detected. Switching nickname index to: ${botState.botNameIndex}`);
-      } else if (reason && typeof reason === 'object' && JSON.stringify(reason).includes('idle')) {
+      if (typeof reason === 'string') {
+        if (reason.includes('idle')) {
+          botState.botNameIndex++;
+          console.log(`[Anti-Kick] Idle detected. Switching nickname index to: ${botState.botNameIndex}`);
+        } else if (reason.includes('banned')) {
+          console.log(`[ALERT] The bot appears to be BANNED from the server: ${reason}`);
+        } else if (reason.includes('whitelist')) {
+          console.log(`[ALERT] The bot is not on the WHITELIST: ${reason}`);
+        } else if (reason.includes('proxy')) {
+          console.log(`[ALERT] Proxy/VPN error detected. Aternos might be blocking Render/hosting IPs.`);
+        }
+      } else if (reason && typeof reason === 'object') {
         const reasonStr = JSON.stringify(reason);
+        console.log(`[Bot] Detailed Kick Reason (JSON): ${reasonStr}`);
         if (reasonStr.includes('idle')) {
           botState.botNameIndex++;
           console.log(`[Anti-Kick] Idle detected (JSON). Switching nickname index to: ${botState.botNameIndex}`);
@@ -490,9 +498,17 @@ function createBot() {
     });
 
     bot.on('error', (err) => {
-      console.log(`[Bot] Error: ${err.message}`);
-      botState.errors.push({ type: 'error', message: err.message, time: Date.now() });
-      // Don't immediately reconnect on error - let 'end' event handle it
+      console.log(`[Bot] ERROR DETECTED: ${err.message}`);
+      if (err.code === 'ECONNREFUSED') {
+        console.log(`[Bot] Connection Refused: Is the server IP/Port correct and is the server ONLINE?`);
+      } else if (err.code === 'ETIMEDOUT') {
+        console.log(`[Bot] Connection Timed Out: The server is taking too long to respond.`);
+      } else if (err.code === 'ENOTFOUND') {
+        console.log(`[Bot] Host Not Found: Check if the IP '${config.server.ip}' is correct.`);
+      } else {
+        console.log(`[Bot] Raw Error Data:`, err);
+      }
+      botState.errors.push({ type: 'error', message: err.message, code: err.code, time: Date.now() });
     });
 
   } catch (err) {
